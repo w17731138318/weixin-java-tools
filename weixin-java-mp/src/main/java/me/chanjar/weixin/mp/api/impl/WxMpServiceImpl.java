@@ -65,22 +65,23 @@ public class WxMpServiceImpl implements WxMpService {
       return false;
     }
   }
-
+//获取当前的AccessToken值
   @Override
   public String getAccessToken() throws WxErrorException {
     return getAccessToken(false);
   }
-
+//是否刷新当前的AccessToken值
   @Override
   public String getAccessToken(boolean forceRefresh) throws WxErrorException {
     Lock lock = this.wxMpConfigStorage.getAccessTokenLock();
     try {
       lock.lock();
-
+      //如果强制
       if (forceRefresh) {
+        //强制过期
         this.wxMpConfigStorage.expireAccessToken();
       }
-
+      //判断是否过期
       if (this.wxMpConfigStorage.isAccessTokenExpired()) {
         String url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential" +
           "&appid=" + this.wxMpConfigStorage.getAppId() + "&secret="
@@ -98,6 +99,7 @@ public class WxMpServiceImpl implements WxMpService {
               throw new WxErrorException(error);
             }
             WxAccessToken accessToken = WxAccessToken.fromJson(resultContent);
+            //保存新的AccessToken
             this.wxMpConfigStorage.updateAccessToken(accessToken.getAccessToken(),
               accessToken.getExpiresIn());
           } finally {
